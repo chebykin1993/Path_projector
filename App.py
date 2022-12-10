@@ -17,9 +17,14 @@ class SocketMarker(features.ClickForMarker):
                     new_mark.bindPopup({{ this.popup }});
                     var socket = io.connect('http://127.0.0.1:5000');
                     socket.emit("message", lat, lng);
-                    socket.on("message", (coords) => { function() {
-                    var planes = JSON.parse(coords);};);
-                    for (let plane in planes) { L.marker().setLatLng(planes[plane]).addTo({{this._parent.get_name()}});}
+                    socket.on("message", (planes) => {        
+                    for (let plane in planes) {
+                    let moving_marker = L.marker(planes[plane],
+                    {icon: L.icon({iconUrl: 
+                    'https://img.icons8.com/ios/50/null/prop-plane--v1.png',
+                    iconSize: [40, 30]})})
+                    moving_marker.addTo({{this._parent.get_name()}}) 
+                    moving_marker.bindPopup(plane) } });
                     };
                 {{this._parent.get_name()}}.on('click', newMarker);
             {% endmacro %}
@@ -31,7 +36,6 @@ socketio = SocketIO(app)
 M = Map()
 click = SocketMarker()
 M.add_child(click)
-
 coords = {}
 
 @app.route('/')
@@ -41,12 +45,15 @@ def home():
 @socketio.on('message')
 def handle_message(lat, lng):
     point = main.Origin(float(lat), float(lng))
+    circle = vl.Circle((point.latitude, point.longtitude), radius=point.maxrange * 1000)
+    circle.add_to(M)
     while True:
         traffic = point.params_calc()
         for plane in traffic:
             coords.setdefault(plane, traffic[plane][2:4])
-        socketio.emit('messages', coords)
+        socketio.send(coords)
         time.sleep(10)
+        traffic.clear()
         coords.clear()
 
 if __name__ == '__main__':
