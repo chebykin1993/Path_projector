@@ -6,7 +6,7 @@ import requests
 from geographiclib.geodesic import Geodesic
 
 class Origin:
-    def __init__(self, latitude, longtitude, maxrange):
+    def __init__(self, latitude, longtitude, maxrange=300):
         self.latitude = latitude
         self.longtitude = longtitude
         self.maxrange = maxrange
@@ -16,8 +16,8 @@ class Origin:
             self.latitude + self.maxrange / 111,
             self.longtitude + self.maxrange / (111.320 * math.cos(math.radians(self.latitude)))
         ]
-    def params_calc(self, lamin=None, lomin=None, lamax=None, lomax=None):
-        request = requests.get("https://opensky-network.org/api/states/all", params={
+    def params_calc(self):
+        request = requests.get("https://opensky-network.org/api/states/all", headers={'Artem': 'Cheba1111'}, params={
             'lamin': self.boundaries[0],
             'lomin': self.boundaries[1],
             'lamax': self.boundaries[2],
@@ -44,14 +44,13 @@ class Origin:
                 air_traffic.setdefault(i[1].rstrip(), plane_coords)
             return air_traffic
 
-    def path_calculation(self, callsign, dist_diff):
-        new_coords = self.params_calc()
-        angle_actual = new_coords[callsign][1]
+    def path_calculation(self, traffic, callsign, dist_diff):
+        angle_actual = traffic[callsign][1]
         if angle_actual > 90:
             return 'too late'
-        distance_to_exit = (new_coords[callsign][0] + self.maxrange) * math.cos(math.radians(angle_actual))
-        coords_exit = Geodesic.WGS84.Direct(new_coords[callsign][2],
-                                            new_coords[callsign][3],
+        distance_to_exit = (traffic[callsign][0] + self.maxrange) * math.cos(math.radians(angle_actual))
+        coords_exit = Geodesic.WGS84.Direct(traffic[callsign][2],
+                                            traffic[callsign][3],
                                             180.0,
                                             distance_to_exit * 1000)
         distance_corr = (distance_to_exit // 10) * 10
@@ -69,7 +68,7 @@ class Origin:
                 break
         turn_position = Geodesic.WGS84.Direct(float(self.latitude),
                                             float(self.longtitude),
-                                            new_coords[callsign][4] + angle_diff,
+                                            traffic[callsign][4] + angle_diff,
                                             distance_to_origin * 1000)
         return angle_path, coords_exit['lat2'], coords_exit['lon2'], turn_position['lat2'], turn_position['lon2']
 
@@ -96,9 +95,10 @@ class Origin:
                 fig.annotate(int(relation), (math.radians(f), int(relation)), fontsize=5)
                 fi = f
                 dist = relation
-        plt.savefig('globalTrafficDuringRoni.jpg')
+        plt.savefig('plot.jpg')
         plt.show()
-    def make_base(self):
+
+    def make_json(self):
         angles = np.arange(5, 95, 5)
         intervals = np.arange(10, 610, 10)
         base = {}
