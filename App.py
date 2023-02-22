@@ -81,5 +81,5 @@ def handle_message(lat, lng):
         coords.clear()
 
 if __name__ == '__main__':
-    socketio.run(host='0.0.0.0')
+    socketio.run(app, host='0.0.0.0')
 
