@@ -81,5 +81,5 @@ def handle_message(lat, lng):
         coords.clear()
 
 if __name__ == '__main__':
-    socketio.run(app, allow_unsafe_werkzeug=True)
+    socketio.run(app)
 
