@@ -24,7 +24,7 @@ class SocketMarker(features.ClickForMarker):
                     var circle = L.circle(new_mark.getLatLng(),
                      {radius: 300000, fill: false}).addTo({{this._parent.get_name()}});
                     
-                    var socket = io.connect('http://127.0.0.1:5000');
+                    var socket = io.connect('https://shaitanmashina-production.up.railway.app/');
                     socket.emit("message", lat, lng);     
                     socket.on("message", (planes) => {
                     for (plane in planes) {
@@ -81,5 +81,5 @@ def handle_message(lat, lng):
         coords.clear()
 
 if __name__ == '__main__':
-    socketio.run(app)
+    socketio.run(app, host='0.0.0.0')
 
